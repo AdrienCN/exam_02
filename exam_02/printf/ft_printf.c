@@ -93,6 +93,16 @@ void	ft_putnbr_base(int nbr, char *str)
 	write(1, &str[nbr % b_len], 1);
 }
 
+void	ft_putnbr_hexbase(unsigned int nbr, char *str)
+{
+	int b_len;
+
+	b_len = ft_strlen(str);
+	if (nbr >= b_len)
+		ft_putnbr_hexbase(nbr / b_len, str);
+	write (1, &str[nbr % b_len], 1);
+}
+
 int		ft_atoi(char *str)
 {
 	int sign;
