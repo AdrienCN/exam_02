@@ -1,4 +1,7 @@
-#include "h_printf.h"
+
+#include <stdio.h>
+#include <unistd.h>
+#include <stdarg.h>
 
 typedef	struct s_data
 {
@@ -7,16 +10,9 @@ typedef	struct s_data
 	int field_on;
 	int field_val;
 	int printed;
+	int n;
 	int error;
-	int i;
-}
-
-void	ft_put_onechar(char c, t_data *info)
-{
-	write(1, &c, 1);
-	info->n++;
-	info->printed++
-}
+}			t_data;
 
 int		ft_strlen(char *str)
 {
@@ -44,9 +40,9 @@ void	ft_reset_struct(t_data *info)
 	info->prec_val = 0;
 	info->field_val = 0;
 	info->field_on = 0;
-	info->i = 0;
+	info->n = 0;
 	info->error = 0;
-}	t_data;
+}
 
 int		ft_isdigit(char c)
 {
@@ -59,7 +55,7 @@ int		ft_nbrlen(int n)
 {
 	int i;
 
-	i = 0;
+	i = 1;
 	if (n < 0)
 		n = -n;
 	while (n >= 10)
@@ -74,7 +70,7 @@ int		ft_hexlen(unsigned int n)
 {
 	unsigned int i;
 
-	i = 0;
+	i = 1;
 	while (n >= 16)
 	{
 		i++;
@@ -95,9 +91,9 @@ void	ft_putnbr_base(int nbr, char *str)
 
 void	ft_putnbr_hexbase(unsigned int nbr, char *str)
 {
-	int b_len;
+	unsigned int b_len;
 
-	b_len = ft_strlen(str);
+	b_len = (unsigned int)ft_strlen(str);
 	if (nbr >= b_len)
 		ft_putnbr_hexbase(nbr / b_len, str);
 	write (1, &str[nbr % b_len], 1);
@@ -125,7 +121,7 @@ int		ft_atoi(char *str)
 }
 
 
-void	ft_print_hex(t_data *info, va_list arg);
+void	ft_print_hex(t_data *info, va_list arg)
 {
 	unsigned int x;
 	int zero_pad;
@@ -133,44 +129,49 @@ void	ft_print_hex(t_data *info, va_list arg);
 	int width;
 
 	x = va_arg(arg, unsigned int);
-	len = ft_hexlen(d);
-	zero_pad = (info->prec_on == 1 && prec_val > len ? prec_val - len : 0);
-	width = info->field_val - (zero_pad + len)
-	while (width++ > 0)
+	len = ft_hexlen(x);
+	zero_pad = 0;
+	if (info->prec_on && info->prec_val > len)
+		zero_pad = info->prec_val - len;
+	width = info->field_val - (zero_pad + len);
+	while (width-- > 0)
 	{
 		write(1, " ", 1);
 		info->printed++;
 	}
-	info->printed += len + zero_pad;
 	while (zero_pad-- > 0)
-		write(1, '0', 1);
-	if (x == '0' && info->prec_val)
+	{
+		write(1, "0", 1);
+		info->printed++;
+	}
+	if (x == 0 && info->prec_on)
 		return;
-	ft_putnbr_hexbase(x, "0123456789");
+	info->printed += len;
+	ft_putnbr_hexbase(x, "0123456789abcdef");
 }
-
-
 
 void	ft_print_str(t_data *info, va_list arg)
 {
 	int len;
 	char *str;
 
-	str = va_arg(arg, char *);
+	str = va_arg(arg, char*);
 	if (str == NULL)
 		str = "(null)";
 	len = ft_strlen(str);
 	if (info->prec_on && info->prec_val < len)
 	   len = info->prec_val;
-	while (info->field_on && info-field_val > info->prec_val)
+	while (info->field_on && info->field_val > info->prec_val)
 	{
 		write(1, " ", 1);
 		info->printed++;
 		info->field_val--;
 	}
-	while (info->prec_val > 0)
+	while (len > 0)
 	{
-		write(1, " ", 1);
+		write(1, str, 1);
+		str++;
+		len--;
 		info->printed++;
 	}
 }
@@ -184,56 +185,33 @@ void	ft_print_int(t_data *info, va_list arg)
 
 	d = va_arg(arg, int);
 	len = ft_nbrlen(d);
+		zero_pad = 0;
+	if (info->prec_on && info->prec_val > len)
+		zero_pad = info->prec_val - len;
 	if (d < 0)
 		len++;
-	zero_pad = (info->prec_on == 1 && prec_val > len ? prec_val - len : 0);
-	width = info->field_val - (zero_pad + len)
-	while (width++ > 0)
+	width = info->field_val - (zero_pad + len);
+	while (width-- > 0)
 	{
 		write(1, " ", 1);
 		info->printed++;
 	}
-	info->printed += len + zero_pad;
+	if (d == 0 && info->prec_on && info->prec_val == 0)
+		return;
 	if (d < 0)
 	{
 		d = -d;
 		write(1, "-", 1);
 	}
+	info->printed += len;
 	while (zero_pad-- > 0)
-		write(1, '0', 1);
-	if (d == '0' && info->prec_val)
+	{
+		write(1, "0", 1);
+		info->printed++;
+	}
+	if (d == 0 && info->prec_on)
 		return;
 	ft_putnbr_base(d, "0123456789");
-}
-
-int		ft_printf(char *str, ...)
-{
-	int		ret;
-	va_list arg;
-	t_data	info;
-	va_start(arg, str);
-	ft_init_struct(&info);
-	ret = ft_loop_in_str(str, arg, &info);
-	return (ret);
-}
-
-int		ft_loop_in_str(char *str, va_list arg, t_data *info)
-{
-	int i;
-	
-	i = 0;
-	while (str[i] != '\0')
-	{
-		if (str[i] == '%')
-			ft_convert(str + i, arg, info);
-		else
-			ft_put_onechar(str + i, info);
-		i += info->n;
-		if (info->error == -1)
-			return (-1);
-		ft_reset_struct(info);
-	}
-	return (info->printed);
 }
 
 void	ft_convert(char *str, va_list arg, t_data *info)
@@ -254,21 +232,71 @@ void	ft_convert(char *str, va_list arg, t_data *info)
 	{
 		i++;
 		info->prec_on = 1;
-		info->prec_val = ft_atoi(str[i]);
-		if (str[i] == '-')
-			i++;
+		info->prec_val = ft_atoi(str + i);
 		while (ft_isdigit(str[i]))
 			i++;
-		if (info->prec_val < 0)
-			info->prec_on = 0;
 	}
 	info->n += i;
-	if (info->type == 'd')
+	/*
+	printf("prec = %d | p_val = %d\n", info->prec_on, info->prec_val);
+	printf("field = %d | f_val = %d\n", info->field_on, info->field_val);
+	*/
+	if (str[i] == 'd')
 		ft_print_int(info, arg);
-	else if (info->type == 's')
+	else if (str[i] == 's')
 		ft_print_str(info, arg);
-	else if (info->type == 'x')
+	else if (str[i] == 'x')
 		ft_print_hex(info, arg);
 	else
-		info->error == 1;
+		info->error = 1;
+}
+
+int		ft_loop_in_str(char *str, va_list arg, t_data *info)
+{
+	int i;
+	
+	i = 0;
+	while (str[i] != '\0')
+	{
+		if (str[i] == '%')
+			ft_convert(str + i, arg, info);
+		else
+		{
+			write(1, &str[i], 1);
+			info->printed++;
+		}
+		i++;
+		i += info->n;
+		if (info->error == -1)
+			return (-1);
+		ft_reset_struct(info);
+	}
+	return (info->printed);
+}
+
+int		ft_printf(char *str, ...)
+{
+	int		ret;
+	va_list arg;
+	t_data	info;
+	va_start(arg, str);
+	ft_init_struct(&info);
+	ret = ft_loop_in_str(str, arg, &info);
+	return (ret);
+}
+
+
+int main(void)
+{
+	unsigned int	x;
+	int				d;
+	char			*s;
+
+	s = "12345";
+	x = 0;
+	d = 8;
+
+	printf("%d\n", printf("printf:[%.0s][%5.2d][%5.0x]\n", s, d, x));
+	printf("%d\n", ft_printf("adrien:[%.0s][%5.2d][%5.0x]\n", s, d, x));
+	return (0);
 }
