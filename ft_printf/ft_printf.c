@@ -52,7 +52,6 @@ int		ft_hexlen(unsigned int nbr)
 	return (i);
 }
 
-
 int		ft_isdigit(char c)
 {
 	if (c >= '0' && c <= '9')
@@ -75,6 +74,8 @@ int		ft_nbrlen(int nbr)
 	int i;
 
 	i = 1;
+	if (nbr < 0)
+		nbr = -nbr;
 	while (nbr >= 10)
 	{
 		i++;
@@ -82,7 +83,6 @@ int		ft_nbrlen(int nbr)
 	}
 	return (i);
 }
-
 
 void	ft_putnbr_base(char *base, int nbr)
 {
@@ -103,6 +103,7 @@ void	ft_putnbr_hexbase(char *base, unsigned int nbr)
 		ft_putnbr_hexbase(base, nbr / b_len);
 	ft_putchar(base[nbr % b_len]);
 }
+
 int		ft_atoi(char *str)
 {
 	int sign;
@@ -125,6 +126,7 @@ int		ft_atoi(char *str)
 	}
 	return (nbr * sign);
 }
+
 void	ft_print_str(va_list arg, t_data *info)
 {
 	int len;
@@ -185,9 +187,6 @@ void	ft_print_hex(va_list arg, t_data *info)
 	ft_putnbr_hexbase("0123456789abcdef", x);
 }
 
-
-
-
 void	ft_print_int(va_list arg, t_data *info)
 {
 	int len;
@@ -197,6 +196,7 @@ void	ft_print_int(va_list arg, t_data *info)
 
 	d = va_arg(arg, int);
 	len = ft_nbrlen(d);
+	//printf("LEN = %d\n", len);
 	if (d == 0 && info->p_on && info->p_val == 0)
 		len = 0;
 	zero_pad = 0;
@@ -205,7 +205,7 @@ void	ft_print_int(va_list arg, t_data *info)
 	if (d < 0)
 		len++;
 	width = info->f_val - (zero_pad + len);
-	//printf("\nf_val = %d | zero_pad = %d | len = %d\n", info->f_val, zero_pad, len);
+	//printf("\nf_val = %d | zero_pad = %d | len = %d | w = %d\n", info->f_val, zero_pad, len, width);
 	while (width > 0)
 	{
 		ft_putchar(' ');
@@ -216,7 +216,6 @@ void	ft_print_int(va_list arg, t_data *info)
 	{
 		d = -d;
 		ft_putchar('-');
-		info->print++;
 	}
 	while (zero_pad > 0)
 	{
@@ -229,7 +228,6 @@ void	ft_print_int(va_list arg, t_data *info)
 	info->print += len;
 	ft_putnbr_base("0123456789", d);
 }
-
 
 void	ft_convert(char *str, va_list arg, t_data *info)
 {
@@ -309,11 +307,11 @@ int main(void)
 	int d;
 	int x;
 
-	d = 42;
+	d = -42;
 	x = 42;
-	str = "Ceci_est_un_test";
+	str = NULL;
 
-	printf("%d\n", printf("le_printf:[%20.5s][%5.d][%5.x]\n", str, d, x));
-	printf("%d\n", ft_printf("ft_printf:[%20.5s][%5.d][%5.x]\n", str, d, x));
+	printf("%d\n", printf("le_printf:[%14.4s][%5.d][%5.x]\n", str, d, x));
+	printf("%d\n", ft_printf("ft_printf:[%14.4s][%5.d][%5.x]\n", str, d, x));
 	return (0);
 }
